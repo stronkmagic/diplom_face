@@ -10,7 +10,7 @@ import imutils
 import pickle
 import cv2
 import os
-
+import matplotlib.pyplot as plt
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
 ap.add_argument("-i", "--dataset", required=True,
@@ -34,7 +34,7 @@ detector = cv2.dnn.readNetFromCaffe(protoPath, modelPath)
 
 # load our serialized face embedding model from disk
 print("[INFO] loading face recognizer...")
-embedder = cv2.dnn.readNetFromTorch(args["embedding_model"])
+embedder = cv2.dnn.readNetFromTensorflow(args["embedding_model"])
 
 # grab the paths to the input images in our dataset
 print("[INFO] quantifying faces...")
@@ -103,7 +103,6 @@ for (i, imagePath) in enumerate(imagePaths):
 				(96, 96), (0, 0, 0), swapRB=True, crop=False)
 			embedder.setInput(faceBlob)
 			vec = embedder.forward()
-
 			# add the name of the person + corresponding face
 			# embedding to their respective lists
 			knownNames.append(name)
