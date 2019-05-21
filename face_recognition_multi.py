@@ -81,7 +81,7 @@ def process(worker_id, read_frame_list, write_frame_list):
         # Loop through each face in this frame of video
         for (top, right, bottom, left), face_encoding in zip(face_locations, face_encodings):
             # See if the face is a match for the known face(s)
-            matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
+            matches = face_recognition.compare_faces(known_face_encodings, face_encoding, tolerance=0.4)
 
             name = "Unknown"
 
@@ -131,24 +131,26 @@ if __name__ == '__main__':
     p.append(Process(target=capture, args=(read_frame_list,)))
     p[0].start()
 
-    # Load a sample picture and learn how to recognize it.
-    obama_image = face_recognition.load_image_file("dataset/Denys/den.jpg")
-    obama_face_encoding = face_recognition.face_encodings(obama_image)[0]
-
-    # Load a second sample picture and learn how to recognize it.
-    biden_image = face_recognition.load_image_file("dataset/Vladlen/Vladlen0.jpg")
-    biden_face_encoding = face_recognition.face_encodings(biden_image)[0]
-
-    # Create arrays of known face encodings and their names
-    Global.known_face_encodings = [
-        obama_face_encoding,
-        biden_face_encoding
-    ]
-    Global.known_face_names = [
-        "Denys",
-        "Vladlen"
-    ]
-
+    known_face_encodings = []
+    known_face_names = []
+    import os
+    from imutils import paths
+    i = 0
+    for name in os.listdir('dataset'):
+        userDir = os.path.join('dataset', name)
+        for user in os.listdir(userDir):
+            # Load a sample picture and learn how to recognize it.
+            image = face_recognition.load_image_file(os.path.join(userDir, user))
+            i = i + 1
+            print(str(i) + "/" + str(len(list(paths.list_files('dataset')))))
+            print(name)
+            face_encoding = face_recognition.face_encodings(image)
+            if face_encoding is not None and len(face_encoding) >= 1:
+                # Create arrays of known face encodings and their names
+                known_face_encodings.append(face_encoding[0])
+                known_face_names.append(user)
+    Global.known_face_encodings = known_face_encodings
+    Global.known_face_names = known_face_names
     # Create workers
     for worker_id in range(1, worker_num + 1):
         p.append(Process(target=process, args=(worker_id, read_frame_list, write_frame_list)))
