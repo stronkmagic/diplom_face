@@ -26,7 +26,7 @@ ap.add_argument("-r", "--recognizer", required=True,
 	help="path to model trained to recognize faces")
 ap.add_argument("-l", "--le", required=True,
 	help="path to label encoder")
-ap.add_argument("-c", "--confidence", type=float, default=0.9,
+ap.add_argument("-c", "--confidence", type=float, default=0.95,
 	help="minimum probability to filter weak detections")
 args = vars(ap.parse_args())
 

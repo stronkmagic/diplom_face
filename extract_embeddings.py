@@ -21,7 +21,7 @@ ap.add_argument("-d", "--detector", required=True,
 	help="path to OpenCV's deep learning face detector")
 ap.add_argument("-m", "--embedding-model", required=True,
 	help="path to OpenCV's deep learning face embedding model")
-ap.add_argument("-c", "--confidence", type=float, default=0.5,
+ap.add_argument("-c", "--confidence", type=float, default=0.95,
 	help="minimum probability to filter weak detections")
 args = vars(ap.parse_args())
 
@@ -59,9 +59,7 @@ for (i, imagePath) in enumerate(imagePaths):
 	# maintaining the aspect ratio), and then grab the image
 	# dimensions
 	image = cv2.imread(imagePath)
-
-	image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-	image = imutils.resize(image, width=600)
+	image = imutils.resize(image, width=300)
 	(h, w) = image.shape[:2]
 
 	# construct a blob from the image
