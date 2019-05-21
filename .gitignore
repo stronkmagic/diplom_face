@@ -1,4 +1,5 @@
 dataset/*
+images/*
 output/
 venv/
 .idea/
