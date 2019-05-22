@@ -1,0 +1,5 @@
+1)Alignmnet
+2)Augmentation
+3)Frontalization
+4)face hallucination
+5)face recognition dream (Pose robust method)
