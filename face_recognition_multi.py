@@ -80,23 +80,26 @@ def process(worker_id, read_frame_list, write_frame_list):
 
         # Loop through each face in this frame of video
         for (top, right, bottom, left), face_encoding in zip(face_locations, face_encodings):
+            tolerance = 0.53
             # See if the face is a match for the known face(s)
-            matches = face_recognition.compare_faces(known_face_encodings, face_encoding, tolerance=0.5)
+            distances = face_recognition.face_distance(known_face_encodings, face_encoding)
 
             name = "Unknown"
 
-            # If a match was found in known_face_encodings, just use the first one.
-            if True in matches:
-                first_match_index = matches.index(True)
-                name = known_face_names[first_match_index]
+
+            #TODO Rewrite finding min index!!
+            min_index = numpy.argmin(distances, axis=0)
+            min_dist = distances[min_index]
+            if min_dist < tolerance:
+                name = known_face_names[min_index]
+
 
             # Draw a box around the face
             cv2.rectangle(frame_process, (left, top), (right, bottom), (0, 0, 255), 2)
 
-            # Draw a label with a name below the face
-            cv2.rectangle(frame_process, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED)
-            font = cv2.FONT_HERSHEY_DUPLEX
-            cv2.putText(frame_process, name, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
+            # Draw a label
+            font = cv2.FONT_HERSHEY_PLAIN
+            cv2.putText(frame_process, name, (left + 6, top + 12), font, 1.0, (0, 0, 255), 1)
 
         # Wait to write
         while Global.write_num != worker_id:
@@ -138,9 +141,11 @@ if __name__ == '__main__':
     i = 0
     for name in os.listdir('dataset'):
         userDir = os.path.join('dataset', name)
-        for user in os.listdir(userDir):
+        for (iteration, imagePath) in enumerate(list(paths.list_images(userDir))):
+        #for user in os.listdir(userDir):
             # Load a sample picture and learn how to recognize it.
-            image = face_recognition.load_image_file(os.path.join(userDir, user))
+            image = face_recognition.load_image_file(imagePath)
+            #image = face_recognition.load_image_file(os.path.join(userDir, user))
             i = i + 1
             print(str(i) + "/" + str(len(list(paths.list_files('dataset')))))
             print(name)
@@ -148,7 +153,7 @@ if __name__ == '__main__':
             if face_encoding is not None and len(face_encoding) >= 1:
                 # Create arrays of known face encodings and their names
                 known_face_encodings.append(face_encoding[0])
-                known_face_names.append(user)
+                known_face_names.append(imagePath)
     Global.known_face_encodings = known_face_encodings
     Global.known_face_names = known_face_names
     # Create workers

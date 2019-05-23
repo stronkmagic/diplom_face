@@ -22,14 +22,51 @@ import os
 
 def augment_identity(identity_path, samples):
     if os.path.exists(identity_path):
-        p = Augmentor.Pipeline(identity_path, output_directory='output')
-        # Add operations to the pipeline as normal:
-        p.rotate(probability=1, max_left_rotation=5, max_right_rotation=5)
-        p.flip_left_right(probability=0.5)
-        p.shear(probability=0.6, max_shear_left=5, max_shear_right=5)
-        p.skew_tilt(probability=0.6, magnitude=0.5)
-        p.crop_random(probability=1, percentage_area=0.9, randomise_percentage_area=False)
-        p.sample(samples)
+        pipeline = Augmentor.Pipeline(identity_path, output_directory='output')
+        #aug_skew(pipeline, samples)
+        #aug_distortion(pipeline, samples)
+        aug_tilt_x(pipeline, samples)
+        aug_tilt_y(pipeline, samples)
+        #aug_rotate(pipeline, samples)
+        aug_flip_left_right(pipeline, samples)
+        #aug_shear(pipeline, samples)
 
 
-augment_identity('dataset/Vladlen/', 10)
+def aug_skew(pipeline, samples):
+    pipeline.skew_tilt(probability=1, magnitude=0.2)
+    pipeline.sample(samples)
+
+
+def aug_distortion(pipeline, samples):
+    pipeline.random_distortion(probability=1.0, grid_width=4, grid_height=4, magnitude=12)
+    pipeline.sample(samples)
+
+
+def aug_tilt_x(pipeline, samples):
+    pipeline.skew_left_right(probability=1, magnitude=0.5)
+    pipeline.sample(samples)
+
+
+def aug_tilt_y(pipeline, samples):
+    pipeline.skew_top_bottom(probability=1, magnitude=0.5)
+    pipeline.sample(samples)
+
+
+def aug_rotate(pipeline, samples):
+    pipeline.rotate(probability=1, max_left_rotation=20, max_right_rotation=20)
+    pipeline.sample(samples)
+
+
+def aug_shear(pipeline, samples):
+    pipeline.shear(probability=1, max_shear_left=10, max_shear_right=10)
+    pipeline.sample(samples)
+
+
+def aug_flip_left_right(pipeline, samples):
+    pipeline.flip_left_right(probability=1)
+    pipeline.sample(samples)
+
+#augment_identity('dataset/Vladlen', 1)
+for person in os.listdir('dataset'):
+    personDir = os.path.join('dataset', person)
+    augment_identity(personDir, 20)
