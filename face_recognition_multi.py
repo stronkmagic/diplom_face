@@ -3,7 +3,16 @@ import cv2
 from multiprocessing import Process, Manager, cpu_count
 import time
 import numpy
+import os
+from imutils import paths
+import dlib
+import pickle
 
+dlib.DLIB_USE_CUDA = True
+#dlib.DLIB_USE_BLAS = False
+#dlib.DLIB_USE_LAPACK = False
+
+print(dlib.DLIB_USE_CUDA)
 
 # This is a little bit complicated (but fast) example of running face recognition on live video from your webcam.
 # This example is using multiprocess.
@@ -32,7 +41,7 @@ def prev_id(current_id):
 # A subprocess use to capture frames.
 def capture(read_frame_list):
     # Get a reference to webcam #0 (the default one)
-    video_capture = cv2.VideoCapture(0)
+    video_capture = cv2.VideoCapture(-1)
     # video_capture.set(3, 640)  # Width of the frames in the video stream.
     # video_capture.set(4, 480)  # Height of the frames in the video stream.
     # video_capture.set(5, 30) # Frame rate.
@@ -76,11 +85,11 @@ def process(worker_id, read_frame_list, write_frame_list):
 
         # Find all the faces and face encodings in the frame of video, cost most time
         face_locations = face_recognition.face_locations(rgb_frame)
-        face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
+        face_encodings = face_recognition.face_encodings(rgb_frame, face_locations, num_jitters=10)
 
         # Loop through each face in this frame of video
         for (top, right, bottom, left), face_encoding in zip(face_locations, face_encodings):
-            tolerance = 0.53
+            tolerance = 0.5
             # See if the face is a match for the known face(s)
             distances = face_recognition.face_distance(known_face_encodings, face_encoding)
 
@@ -134,26 +143,10 @@ if __name__ == '__main__':
     p.append(Process(target=capture, args=(read_frame_list,)))
     p[0].start()
 
-    known_face_encodings = []
-    known_face_names = []
-    import os
-    from imutils import paths
-    i = 0
-    for name in os.listdir('dataset'):
-        userDir = os.path.join('dataset', name)
-        for (iteration, imagePath) in enumerate(list(paths.list_images(userDir))):
-        #for user in os.listdir(userDir):
-            # Load a sample picture and learn how to recognize it.
-            image = face_recognition.load_image_file(imagePath)
-            #image = face_recognition.load_image_file(os.path.join(userDir, user))
-            i = i + 1
-            print(str(i) + "/" + str(len(list(paths.list_files('dataset')))))
-            print(name)
-            face_encoding = face_recognition.face_encodings(image)
-            if face_encoding is not None and len(face_encoding) >= 1:
-                # Create arrays of known face encodings and their names
-                known_face_encodings.append(face_encoding[0])
-                known_face_names.append(imagePath)
+    dataset = pickle.loads(open('output/embeddings.pickle', "rb").read())
+    known_face_encodings = dataset['known_face_encodings']
+    known_face_names = dataset['known_face_names']
+
     Global.known_face_encodings = known_face_encodings
     Global.known_face_names = known_face_names
     # Create workers
