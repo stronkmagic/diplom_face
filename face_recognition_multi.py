@@ -7,12 +7,7 @@ import os
 from imutils import paths
 import dlib
 import pickle
-
-dlib.DLIB_USE_CUDA = True
-#dlib.DLIB_USE_BLAS = False
-#dlib.DLIB_USE_LAPACK = False
-
-print(dlib.DLIB_USE_CUDA)
+from utils import stat_saver
 
 # This is a little bit complicated (but fast) example of running face recognition on live video from your webcam.
 # This example is using multiprocess.
@@ -85,7 +80,7 @@ def process(worker_id, read_frame_list, write_frame_list):
 
         # Find all the faces and face encodings in the frame of video, cost most time
         face_locations = face_recognition.face_locations(rgb_frame)
-        face_encodings = face_recognition.face_encodings(rgb_frame, face_locations, num_jitters=10)
+        face_encodings = face_recognition.face_encodings(rgb_frame, face_locations, num_jitters=1)
 
         # Loop through each face in this frame of video
         for (top, right, bottom, left), face_encoding in zip(face_locations, face_encodings):
@@ -95,13 +90,13 @@ def process(worker_id, read_frame_list, write_frame_list):
 
             name = "Unknown"
 
-
-            #TODO Rewrite finding min index!!
             min_index = numpy.argmin(distances, axis=0)
             min_dist = distances[min_index]
             if min_dist < tolerance:
                 name = known_face_names[min_index]
-
+                row = [name, min_dist, Global.currenct_fps]
+                stat_saver.save_metric(row, 'name_distance_fps')
+                print("fps: %.2f" % Global.currenct_fps)
 
             # Draw a box around the face
             cv2.rectangle(frame_process, (left, top), (right, bottom), (0, 0, 255), 2)
@@ -130,6 +125,7 @@ if __name__ == '__main__':
     Global.write_num = 1
     Global.frame_delay = 0
     Global.is_exit = False
+    Global.currenct_fps = 0
     read_frame_list = Manager().dict()
     write_frame_list = Manager().dict()
 
@@ -169,7 +165,8 @@ if __name__ == '__main__':
             if len(fps_list) > 5 * worker_num:
                 fps_list.pop(0)
             fps = len(fps_list) / numpy.sum(fps_list)
-            print("fps: %.2f" % fps)
+            Global.currenct_fps = fps
+            #print("fps: %.2f" % fps)
 
             # Calculate frame delay, in order to make the video look smoother.
             # When fps is higher, should use a smaller ratio, or fps will be limited in a lower value.

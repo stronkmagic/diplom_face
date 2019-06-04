@@ -66,7 +66,7 @@ def aug_flip_left_right(pipeline, samples):
     pipeline.flip_left_right(probability=1)
     pipeline.sample(samples)
 
-#augment_identity('dataset/Vladlen', 1)
-for person in os.listdir('dataset'):
-    personDir = os.path.join('dataset', person)
+
+for person in os.listdir('images'):
+    personDir = os.path.join('images', person)
     augment_identity(personDir, 3)
