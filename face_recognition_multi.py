@@ -5,6 +5,9 @@ import time
 import numpy
 
 
+TOLERANCE = 0.5
+NAME = "Unknown"
+
 # This is a little bit complicated (but fast) example of running face recognition on live video from your webcam.
 # This example is using multiprocess.
 
@@ -81,14 +84,14 @@ def process(worker_id, read_frame_list, write_frame_list):
         # Loop through each face in this frame of video
         for (top, right, bottom, left), face_encoding in zip(face_locations, face_encodings):
             # See if the face is a match for the known face(s)
-            matches = face_recognition.compare_faces(known_face_encodings, face_encoding, tolerance=0.5)
-
-            name = "Unknown"
-
-            # If a match was found in known_face_encodings, just use the first one.
-            if True in matches:
-                first_match_index = matches.index(True)
-                name = known_face_names[first_match_index]
+            name = NAME
+            distance = 1.0
+            face_distances = face_recognition.face_distance(known_face_encodings, face_encoding)
+            matches = list(face_distances <= TOLERANCE)
+            best_match_index = numpy.argmin(face_distances)
+            if matches[best_match_index]:
+                distance = face_distances[best_match_index]
+                name = known_face_names[best_match_index]
 
             # Draw a box around the face
             cv2.rectangle(frame_process, (left, top), (right, bottom), (0, 0, 255), 2)
@@ -97,6 +100,8 @@ def process(worker_id, read_frame_list, write_frame_list):
             cv2.rectangle(frame_process, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED)
             font = cv2.FONT_HERSHEY_DUPLEX
             cv2.putText(frame_process, name, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
+            # Tolerance
+            cv2.putText(frame_process, str(round(distance, 3)), (left + 6, top + 6), font, 1.0, (0, 0, 255), 1)
 
         # Wait to write
         while Global.write_num != worker_id:
