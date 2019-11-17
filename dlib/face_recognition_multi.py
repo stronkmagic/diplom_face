@@ -4,8 +4,9 @@ from multiprocessing import Process, Manager, cpu_count
 import time
 import numpy
 
+import datetime
 
-TOLERANCE = 0.5
+TOLERANCE = 0.7
 NAME = "Unknown"
 
 # This is a little bit complicated (but fast) example of running face recognition on live video from your webcam.
@@ -74,25 +75,39 @@ def process(worker_id, read_frame_list, write_frame_list):
         # Expect next worker to read frame
         Global.read_num = next_id(Global.read_num)
 
+        # Resize frame of video to 1/4 size for faster face recognition processing
+        small_frame = cv2.resize(frame_process, (0, 0), fx=0.25, fy=0.25)
+
         # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
-        rgb_frame = frame_process[:, :, ::-1]
+        rgb_frame = small_frame[:, :, ::-1]
 
         # Find all the faces and face encodings in the frame of video, cost most time
+        a2 = datetime.datetime.now()
         face_locations = face_recognition.face_locations(rgb_frame)
+        b2 = datetime.datetime.now()
         face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
+        c2 = datetime.datetime.now()
 
+        d2 = b2 - a2
+        e2 = c2 - b2
+        print(d2)
+        print(e2)
         # Loop through each face in this frame of video
         for (top, right, bottom, left), face_encoding in zip(face_locations, face_encodings):
             # See if the face is a match for the known face(s)
             name = NAME
             distance = 1.0
+            a = datetime.datetime.now()
             face_distances = face_recognition.face_distance(known_face_encodings, face_encoding)
+            b = datetime.datetime.now()
             matches = list(face_distances <= TOLERANCE)
             best_match_index = numpy.argmin(face_distances)
             if matches[best_match_index]:
                 distance = face_distances[best_match_index]
                 name = known_face_names[best_match_index]
 
+            c = b - a
+            print(c)
             # Draw a box around the face
             cv2.rectangle(frame_process, (left, top), (right, bottom), (0, 0, 255), 2)
 
