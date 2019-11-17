@@ -22,7 +22,7 @@ import os
 
 def augment_identity(identity_path, samples):
     if os.path.exists(identity_path):
-        p = Augmentor.Pipeline(identity_path, output_directory='output')
+        p = Augmentor.Pipeline(identity_path, output_directory='.')
         # Add operations to the pipeline as normal:
         p.rotate(probability=1, max_left_rotation=5, max_right_rotation=5)
         p.flip_left_right(probability=0.5)
@@ -32,4 +32,4 @@ def augment_identity(identity_path, samples):
         p.sample(samples)
 
 
-augment_identity('dataset/Vladlen/', 10)
+augment_identity('./dataset/Vladlen/', 10)

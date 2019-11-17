@@ -1,6 +1,0 @@
-dataset/*
-images/*
-output/
-venv/
-.idea/
-__pycache__/

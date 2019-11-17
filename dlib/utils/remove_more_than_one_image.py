@@ -1,7 +1,7 @@
 import os
 from imutils import paths
 
-dataset = 'dataset'
+dataset = '../dataset'
 
 for person in os.listdir(dataset):
     personDir = os.path.join(dataset, person)

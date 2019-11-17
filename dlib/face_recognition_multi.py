@@ -6,6 +6,7 @@ import numpy
 
 import datetime
 
+DATASET_FOLDER = 'dataset'
 TOLERANCE = 0.7
 NAME = "Unknown"
 
@@ -156,13 +157,13 @@ if __name__ == '__main__':
     import os
     from imutils import paths
     i = 0
-    for name in os.listdir('dataset'):
-        userDir = os.path.join('dataset', name)
+    for name in os.listdir(DATASET_FOLDER):
+        userDir = os.path.join(DATASET_FOLDER, name)
         for user in os.listdir(userDir):
             # Load a sample picture and learn how to recognize it.
             image = face_recognition.load_image_file(os.path.join(userDir, user))
             i = i + 1
-            print(str(i) + "/" + str(len(list(paths.list_files('dataset')))))
+            print(str(i) + "/" + str(len(list(paths.list_files(DATASET_FOLDER)))))
             print(name)
             face_encoding = face_recognition.face_encodings(image)
             if face_encoding is not None and len(face_encoding) >= 1:
