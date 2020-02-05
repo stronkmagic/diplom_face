@@ -14,8 +14,8 @@ def pickle_stuff(filename, stuff):
 
 
 def main():
-    resnet50_features = VGGFace(model='resnet50', include_top=False, input_shape=(224, 224, 3),
-                                pooling='max')  # pooling: None, avg or max
+    resnet50_features = VGGFace(model='vgg16', include_top=True, input_shape=(224, 224, 3),
+                                pooling='avg')  # pooling: None, avg or max
 
     def image2x(image_path):
         img = image.load_img(image_path, target_size=(224, 224))

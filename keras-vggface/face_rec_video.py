@@ -4,7 +4,12 @@ import numpy as np
 from scipy import spatial
 import cv2
 import pickle
-from time import sleep
+from time import sleep, time
+import csv
+
+NAME_COL = 'name'
+PRECISION_COL = 'precision'
+FPS_COL = 'fps'
 
 
 def load_stuff(filename):
@@ -20,19 +25,20 @@ class FaceIdentify(object):
     """
     CASE_PATH = "data/haarcascade_frontalface_alt.xml"
 
-    def __new__(cls, precompute_features_file=None):
+    def __new__(cls, precompute_features_file=None, writer_csv=None):
         if not hasattr(cls, 'instance'):
             cls.instance = super(FaceIdentify, cls).__new__(cls)
         return cls.instance
 
-    def __init__(self, precompute_features_file=None):
+    def __init__(self, precompute_features_file=None, writer_csv=None):
         self.face_size = 224
+        self.writer_csv = writer_csv
         self.precompute_features_map = load_stuff(precompute_features_file)
         print("Loading VGG Face model...")
-        self.model = VGGFace(model='resnet50',
-                             include_top=False,
+        self.model = VGGFace(model='vgg16',
+                             include_top=True,
                              input_shape=(224, 224, 3),
-                             pooling='max')  # pooling: None, avg or max
+                             pooling='avg')  # pooling: None, avg or max
         print("Loading VGG Face model done")
 
     @classmethod
@@ -84,7 +90,7 @@ class FaceIdentify(object):
         resized_img = np.array(resized_img)
         return resized_img, (x_a, y_a, x_b - x_a, y_b - y_a)
 
-    def identify_face(self, features, threshold=100):
+    def identify_face(self, features, threshold=10000):
         distances = []
         for person in self.precompute_features_map:
             person_features = person.get("features")
@@ -92,11 +98,12 @@ class FaceIdentify(object):
             distances.append(distance)
         min_distance_value = min(distances)
         min_distance_index = distances.index(min_distance_value)
-        print(min_distance_value)
+
         if min_distance_value < threshold:
-            return self.precompute_features_map[min_distance_index].get("name"), min_distance_value
+            name = self.precompute_features_map[min_distance_index].get("name")
+            return name, min_distance_value
         else:
-            return "?", 0
+            return "", 0
 
     def detect_face(self):
         face_cascade = cv2.CascadeClassifier(self.CASE_PATH)
@@ -105,6 +112,7 @@ class FaceIdentify(object):
         video_capture = cv2.VideoCapture(0)
         # infinite loop, break by key ESC
         while True:
+            start_time = time()
             if not video_capture.isOpened():
                 sleep(5)
             # Capture frame-by-frame
@@ -122,11 +130,18 @@ class FaceIdentify(object):
                 # generate features for each face
                 features_faces = self.model.predict(face_imgs)
                 predicted_names = [self.identify_face(features_face) for features_face in features_faces]
+            end_time = time()
+            fps = 1.0/(end_time-start_time)
             # draw results
             for i, face in enumerate(faces):
                 face = np.asarray(face)
-                label = "{}".format(predicted_names[i][0])
-                self.draw_label(frame, face, label, predicted_names[i][1])
+                name = predicted_names[i][0]
+                precision = predicted_names[i][1]
+                label = "{}".format(name)
+                self.draw_label(frame, face, label, precision)
+                row = {NAME_COL: name, PRECISION_COL: precision, FPS_COL: fps}
+                print(row)
+                self.writer_csv.writerow(row)
 
             cv2.imshow('Keras Faces', frame)
             if cv2.waitKey(5) == 27:  # ESC key press
@@ -137,8 +152,12 @@ class FaceIdentify(object):
 
 
 def main():
-    face = FaceIdentify(precompute_features_file="./data/precompute_features.pickle")
-    face.detect_face()
+
+    with open('results.csv', mode='w') as res:
+        fieldnames = [NAME_COL, PRECISION_COL, FPS_COL]
+        writer = csv.DictWriter(res, fieldnames=fieldnames, )
+        face = FaceIdentify(precompute_features_file="./data/precompute_features.pickle", writer_csv=writer)
+        face.detect_face()
 
 
 if __name__ == "__main__":
