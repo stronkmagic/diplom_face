@@ -8,7 +8,7 @@ from time import sleep, time
 import csv
 from .precompute_features import pre_compute_features
 import os.path
-
+from matplotlib import pyplot
 # csv resutlts file constants
 NAME_COL = 'name'
 PRECISION_COL = 'precision'
@@ -89,6 +89,8 @@ class FaceIdentify(object):
     def identify_face(self, features, threshold=10000):
         distances = []
         for person in self.precompute_features_map:
+            if person.get("name") == "Vladlen":
+                print(spatial.distance.euclidean(person.get("features"), features))
             person_features = person.get("features")
             distance = spatial.distance.euclidean(person_features, features)
             distances.append(distance)
@@ -113,14 +115,14 @@ class FaceIdentify(object):
                 sleep(5)
             # Capture frame-by-frame
             ret, frame = video_capture.read()
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            frameImage = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
-            faces = np.asarray(face_recognition.face_locations(gray))
+            faces = np.asarray(face_recognition.face_locations(frameImage))
 
             # placeholder for cropped faces
             face_imgs = np.empty((len(faces), self.face_size, self.face_size, 3))
             for i, face in enumerate(faces):
-                face_img, cropped = self.crop_face(frame, np.asarray(face), margin=-15, size=self.face_size)
+                face_img, cropped = self.crop_face(frameImage, np.asarray(face), margin=5, size=self.face_size)
                 face_imgs[i, :, :, :] = face_img
             if len(face_imgs) > 0:
                 # generate features for each face

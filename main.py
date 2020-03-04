@@ -16,7 +16,7 @@ def main():
     stat_file = "./results/"+options.model + "_" + options.database + "_" + datetime.now().strftime('%Y%m%d%H%M%S') + "_result.csv"
     features_files = "./data/" + options.model + "_" + options.database + "_features.pickle"
     if options.model == "dlib":
-        start_face_rec(stat_file=stat_file, force_pre_compute=options.force, pre_compute_feature_file=features_files)
+        start_face_rec(db=options.database, stat_file=stat_file, force_pre_compute=options.force, pre_compute_feature_file=features_files)
     else:
         k_vgg_face_rec(model=options.model, db=options.database, stat_file=stat_file, force_pre_compute=options.force,
                        pre_compute_feature_file=features_files)

@@ -5,7 +5,7 @@ from utils import load_stuff, pickle_stuff
 from time import time
 import csv
 import os.path
-
+from matplotlib import pyplot
 
 # csv resutlts file constants
 NAME_COL = 'name'
@@ -25,11 +25,14 @@ def pre_compute_features(db="mydb", pre_compute_feature_file="./data/pre_compute
         for user in os.listdir(userDir):
             # Load a sample picture and learn how to recognize it.
             image = face_recognition.load_image_file(os.path.join(userDir, user))
+
             i = i + 1
             print(str(i) + "/" + str(len(list(paths.list_files(DATASET_FOLDER)))))
             print(name)
-            face_encoding = face_recognition.face_encodings(image)
-            if face_encoding is not None and len(face_encoding) >= 1:
+            face_locations = face_recognition.face_locations(image)
+            face_encoding = face_recognition.face_encodings(image, face_locations, num_jitters=3)
+
+            if face_encoding is not None and len(face_encoding) == 1:
                 # Create arrays of known face encodings and their names
                 known_face_encodings.append(face_encoding[0])
                 known_face_names.append(user)
@@ -55,10 +58,10 @@ def dlib_face_rec(pre_compute_feature_file="./data/pre_compute_features.pickle",
         ret, frame = video_capture.read()
 
         # Resize frame of video to 1/4 size for faster face recognition processing
-        small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
+        # small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
 
         # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
-        rgb_small_frame = small_frame[:, :, ::-1]
+        rgb_small_frame = frame[:, :, ::-1]
 
         # Only process every other frame of video to save time
         if process_this_frame:
@@ -67,12 +70,11 @@ def dlib_face_rec(pre_compute_feature_file="./data/pre_compute_features.pickle",
             distance = 1.0
             # Find all the faces and face encodings in the current frame of video
             face_locations = face_recognition.face_locations(rgb_small_frame)
-            face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations, num_jitters=3)
-
+            face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations, num_jitters=1)
             face_names = []
             for face_encoding in face_encodings:
                 # See if the face is a match for the known face(s)
-                matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
+                matches = face_recognition.compare_faces(known_face_encodings, face_encoding, tolerance=0.45)
 
                 distance = 1.0
                 # Or instead, use the known face with the smallest distance to the new face
@@ -81,10 +83,9 @@ def dlib_face_rec(pre_compute_feature_file="./data/pre_compute_features.pickle",
                 if matches[best_match_index]:
                     name = known_face_names[best_match_index]
                     distance = face_distances[best_match_index]
-
                 face_names.append(name)
             end_time = time()
-            fps = 1.0/(end_time-start_time)
+            fps = 1.0 / (end_time - start_time)
             row = {NAME_COL: name, PRECISION_COL: distance, FPS_COL: round(fps, 2)}
             print(row)
             writer_csv.writerow(row)
@@ -94,10 +95,10 @@ def dlib_face_rec(pre_compute_feature_file="./data/pre_compute_features.pickle",
         # Display the results
         for (top, right, bottom, left), name in zip(face_locations, face_names):
             # Scale back up face locations since the frame we detected in was scaled to 1/4 size
-            top *= 4
-            right *= 4
-            bottom *= 4
-            left *= 4
+            # top *= 4
+            # right *= 4
+            # bottom *= 4
+            # left *= 4
 
             # Draw a box around the face
             cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
@@ -123,7 +124,6 @@ def dlib_face_rec(pre_compute_feature_file="./data/pre_compute_features.pickle",
 
 def start_face_rec(db="mydb", stat_file="results.csv", force_pre_compute=False,
                    pre_compute_feature_file="./data/pre_compute_features.pickle"):
-
     # force pre compute features
     if force_pre_compute or not os.path.exists(pre_compute_feature_file):
         print("Starting pre computing features")
