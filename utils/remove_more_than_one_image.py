@@ -3,7 +3,7 @@ from imutils import paths
 
 
 def remove_more_than_one():
-    dataset = '../dataset'
+    dataset = '../dataset/lfw'
 
     for person in os.listdir(dataset):
         personDir = os.path.join(dataset, person)
@@ -11,4 +11,8 @@ def remove_more_than_one():
         if len(personPaths) > 1:
             for (i, imagePath) in enumerate(personPaths):
                 if i != 1:
+                    print(imagePath)
                     os.remove(imagePath)
+
+if __name__ == "__main__":
+    remove_more_than_one()
