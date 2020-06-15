@@ -17,19 +17,19 @@ FPS_COL = 'fps'
 
 
 class WebCamFaceRecognition(object):
-    def __new__(cls, features_files='features', model_name='vgg16', augm_on=False, align_on=False):
+    def __new__(cls, features_files='features', model_name='resnet50', augm_on=False, align_on=False):
         if not hasattr(cls, 'instance'):
             cls.instance = super(WebCamFaceRecognition, cls).__new__(cls)
         return cls.instance
 
-    def __init__(self, features_files='features', model_name='vgg16', augm_on=False, align_on=False):
+    def __init__(self, features_files='features', model_name='resnet50', augm_on=False, align_on=False):
         self.face_size = 224
         self.writer_csv = None
         self.features_files = features_files
         self.features_map = None
         self.augm_on = augm_on
         self.align_on = align_on
-        if model_name == "resnet50" or model_name == "vgg16" or model_name == "senet50":
+        if model_name == "resnet50":
             print("Loading VGG Face model...")
             self.model = VGGFace(model=model_name,
                                  include_top=True,
@@ -69,7 +69,7 @@ class WebCamFaceRecognition(object):
                         face_locations = np.asarray(face_recognition.face_locations(data_image))
 
                     if self.augm_on:
-                        faces_augm = face_augmentation(data_image, 10)
+                        faces_augm = face_augmentation(data_image, 5)
                         for img in faces_augm:
                             face_encodings = self.predict_encodings(img, face_locations)
                             if face_encodings is not None and len(face_encodings) >= 1:
@@ -106,7 +106,7 @@ class WebCamFaceRecognition(object):
             face_encodings = self.model.predict(face_imgs)
         return face_encodings
 
-    def identify_face(self, features, threshold=0.5):
+    def identify_face(self, features, threshold=0.9):
         distances = []
         for person in self.features_map:
             person_features = person.get("features")
@@ -126,48 +126,67 @@ class WebCamFaceRecognition(object):
         # Load feature map
         self.load_features_map()
 
-        process_this_frame = True
         # 0 means the default video capture device in OS
         video_capture = cv2.VideoCapture(0)
 
+        # init params
+        face_locations = []
+        face_encodings = []
+        predicted_names = []
+        fps = 30
+        results = 0
+        process_this_frame = True
+        stop_program = False
+
         # infinite loop, break by key ESC
-        while True:
+        while not stop_program:
 
             # Grab a single frame of video
             ret, frame = video_capture.read()
 
             if not video_capture.isOpened():
                 sleep(2)
-            start_time = time()
 
-            # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
-            rgb_frame = frame[:, :, ::-1]
+            if process_this_frame:
 
-            # Face location
-            face_locations = face_recognition.face_locations(rgb_frame)
+                start_time = time()
 
-            # Encodings
-            face_encodings = self.predict_encodings(rgb_frame, face_locations)
+                # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
+                rgb_frame = frame[:, :, ::-1]
 
-            # Prediction
-            predicted_names = [self.identify_face(features_face, threshold=0.45) for features_face in face_encodings]
+                # Face location
+                face_locations = face_recognition.face_locations(rgb_frame)
 
-            end_time = time()
-            fps = 1.0 / (end_time - start_time)
+                # Encodings
+                face_encodings = self.predict_encodings(rgb_frame, face_locations)
+
+                # Prediction
+                predicted_names = [self.identify_face(features_face, threshold=0.45) for features_face in face_encodings]
+
+                end_time = time()
+                fps = 1.0 / (end_time - start_time)
+
+            process_this_frame = not process_this_frame
+
             # draw results
             for i, face in enumerate(face_locations):
-                face = np.asarray(face)
-                name = predicted_names[i][0]
-                distance = predicted_names[i][1]
-                label = "{}".format(name)
-                self.draw_label(frame, face, label, distance)
-                row = {NAME_COL: name, PRECISION_COL: distance, FPS_COL: round(fps, 2)}
-                print(row)
-                self.writer_csv.writerow(row)
+                if len(predicted_names) > 0:
+                    face = np.asarray(face)
+                    name = predicted_names[i][0]
+                    distance = predicted_names[i][1]
+                    label = "{}".format(name)
+                    self.draw_label(frame, face, label, distance)
+                    row = {NAME_COL: name, PRECISION_COL: distance, FPS_COL: round(fps, 2)}
+                    results += 1
+                    self.writer_csv.writerow(row)
+                    print(row)
+                    print(results)
+                    if results == 1000:
+                        stop_program = True
 
             cv2.imshow('Keras Faces', frame)
             if cv2.waitKey(5) == 27:  # ESC key press
-                break
+                stop_program = True
         # When everything is done, release the capture
         video_capture.release()
         cv2.destroyAllWindows()

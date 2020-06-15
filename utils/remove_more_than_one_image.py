@@ -3,7 +3,7 @@ from imutils import paths
 
 
 def remove_more_than_one():
-    dataset = '../dataset/lfw'
+    dataset = '../dataset/lfw-a-wo-me'
 
     for person in os.listdir(dataset):
         personDir = os.path.join(dataset, person)

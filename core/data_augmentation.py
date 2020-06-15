@@ -1,5 +1,6 @@
 import imgaug.augmenters as iaa
 
+from matplotlib import pyplot as plt
 seq = iaa.Sequential(
     [
         # apply the following augmenters to most images
@@ -35,10 +36,14 @@ def face_augmentation(image, num_samples=10):
     return resultImages
 
 
-
-#import face_recognition
-# image = face_recognition.load_image_file('../dataset/mydb2/Vladlen/vlad1.jpg')
+# EXAMPLE FOR PAPER PART
+# import face_recognition
+# image = face_recognition.load_image_file('../dataset/solo/Vladlen/vladlen1.jpg')
 # images = [image]
+# fig = plt.figure(figsize=(5, 5))
 # for lp in range(10):
 #     print(lp)
 #     image_aug = seq(images=images)
+#     fig.add_subplot(2, 5, lp + 1)
+#     plt.imshow(image_aug[0])
+# plt.show()

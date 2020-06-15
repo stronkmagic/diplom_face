@@ -14,16 +14,16 @@ def main():
     (options, args) = parser.parse_args()
 
     stat_file = "./results/" + options.model + "_" + options.database + "_" + datetime.now().strftime(
-        '%Y%m%d%H%M%S') + "_result.csv"
+        '%Y%m%d%H%M%S')
     features_files = "./data/" + options.model + "_" + options.database
     if options.alignment:
         features_files += "_align"
         stat_file += "_align"
     if options.augmentation:
         features_files += "_augm"
-        features_files += "_augm"
+        stat_file += "_augm"
     features_files += "_features.pickle"
-
+    stat_file += "_result.csv"
     start_face_rec_test(model=options.model, db=options.database, stat_file=stat_file, force_pre_compute=options.force,
                         features_files=features_files, augm_on=options.augmentation, align_on=options.alignment)
 
